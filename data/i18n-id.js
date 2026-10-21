@@ -14,7 +14,8 @@ window.GYM_ID = {
     'goals': 'target', 'Streak': 'Beruntun', 'week': 'minggu', 'weeks': 'minggu', 'Up next': 'Berikutnya', 'Try this': 'Coba ini',
     'Tap to log your weight': 'Ketuk untuk catat berat', 'Quick start': 'Mulai cepat', 'Start': 'Mulai', 'Resume': 'Lanjutkan',
     'Weigh-in': 'Timbang', 'My moves': 'Gerakanku', 'Create your own routine': 'Buat program sendiri', "Add your trainer's plan": 'Masukkan program dari trainer',
-    "Today's training": 'Latihan hari ini',
+    "Today's training": 'Latihan hari ini', 'Your routines': 'Program kamu', '+ Empty workout': '+ Latihan kosong', 'Resume workout': 'Lanjutkan latihan',
+    'Pull to reload': 'Tarik untuk muat ulang', 'Release to reload': 'Lepas untuk muat ulang',
     // exercises
     'Browse': 'Jelajahi', 'Mine': 'Punyaku', 'Body map': 'Peta otot', 'Equipment': 'Alat', 'Muscle': 'Otot', 'All': 'Semua', 'Any': 'Semua',
     'Clear filters': 'Hapus filter', 'No matches. Try fewer words or clear the filters.': 'Tidak ada hasil. Coba kata yang lebih sedikit atau hapus filter.',

@@ -407,13 +407,7 @@
       <button class="tile card media" style="grid-area:m;min-height:190px" data-open="${featId}">${gif(featId).replace('class="gif ', 'class="gif " style="position:absolute;inset:0;border-radius:0"')}<span class="pill">${S.active ? 'Up next' : 'Try this'}</span></button>
       <button class="tile card" style="grid-area:s" data-go="progress"><span class="tl">Streak ${I(IC.flame, 'style="color:var(--lime)"')}</span><span class="split"><span><span class="xl">${cnt(streak)}</span><span class="unit">week${streak === 1 ? '' : 's'}</span></span>${ring(wc / st.weeklyGoal * 100, `<span class="small">${wc}/${st.weeklyGoal}</span>`, 50, 6)}</span></button>
     </div>
-    <section class="sec"><h2>Quick start</h2>
-      <div class="quick">
-        <button class="on" data-act="start-empty">${I(IC.run)}<span>${S.active ? 'Resume' : 'Start'}</span></button>
-        <button data-layer="routines">${I(IC.list)}<span>Routines</span></button>
-        <button data-act="log-weight">${I(IC.scale)}<span>Weigh-in</span></button>
-        <button data-act="mine">${I(IC.note)}<span>My moves</span></button>
-      </div>
+    <section class="sec"><div class="sec-head"><h2>Your routines</h2><button class="link" data-act="start-empty">${S.active ? 'Resume workout' : '+ Empty workout'}</button></div>
       <div class="list">
         ${used5.length ? used5.map(r => routineRow(r)).join('') : TEMPLATES.slice(0, 3).map(t => `<button class="row inset" data-tpl="${esc(t.name)}">${gif(t.ex[0], 'thumb')}<span class="vr"></span><span class="body"><span class="t">${esc(t.name)}</span><span class="s">Template · ${t.ex.length} exercises · tap to add</span></span>${I(IC.plus, 'style="color:var(--lime)"')}</button>`).join('')}
         <button class="row" data-act="new-routine"><span class="eq-ic">${I(IC.plus)}</span><span class="body"><span class="t">Create your own routine</span><span class="s">Add your trainer's plan</span></span></button>
@@ -1021,6 +1015,36 @@
   };
   document.addEventListener('touchend', swipeEnd);
   document.addEventListener('touchcancel', swipeEnd);
+
+  /* pull down on a tab (scrolled to the top, no screen open) to reload the app; a Home Screen app has no browser reload */
+  let pt = null;
+  const ptr = document.createElement('div'); ptr.id = 'ptr'; ptr.setAttribute('aria-hidden', 'true');
+  ptr.innerHTML = I('<path d="M20 12a8 8 0 1 1-2.4-5.7M20 4v5h-5"/>'); document.body.appendChild(ptr);
+  document.addEventListener('touchstart', ev => {
+    pt = null;
+    if (layers.length || ev.touches.length !== 1 || window.scrollY > 0 || document.querySelector('.modal') || ev.target.closest('input,textarea,.chips,.bodies')) return;
+    pt = { x: ev.touches[0].clientX, y: ev.touches[0].clientY, d: 0, on: false };
+  }, { passive: true });
+  document.addEventListener('touchmove', ev => {
+    if (!pt) return;
+    const t = ev.touches[0], dx = t.clientX - pt.x, dy = t.clientY - pt.y;
+    if (!pt.on) {
+      if (dy < -8 || Math.abs(dx) > 12) { pt = null; return; }
+      if (dy < 10 || Math.abs(dx) > dy) return;
+      pt.on = true; ptr.classList.add('show');
+    }
+    ev.preventDefault();
+    pt.d = Math.min(130, Math.max(0, dy * .5));
+    ptr.style.transform = `translate(-50%, ${pt.d}px) rotate(${pt.d * 3}deg)`;
+    if (ptr.classList.toggle('ready', pt.d >= 70) && !pt.buzzed) { pt.buzzed = 1; buzz(8); }
+  }, { passive: false });
+  const pullEnd = () => {
+    const p = pt; pt = null; if (!p || !p.on) return;
+    if (p.d >= 70) { ptr.classList.add('spin'); ptr.style.transform = 'translate(-50%, 70px)'; setTimeout(() => location.reload(), 380); }
+    else { ptr.classList.remove('show', 'ready'); ptr.style.transform = ''; }
+  };
+  document.addEventListener('touchend', pullEnd);
+  document.addEventListener('touchcancel', pullEnd);
 
   /* ticking clocks + rest timer */
   setInterval(() => {
