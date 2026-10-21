@@ -88,6 +88,7 @@
   const DEF = {
     v: 2, workouts: [], routines: [], active: null, nick: {}, notes: {}, body: [], badges: {}, daily: {},
     settings: { name: 'Innamul', sets: 3, reps: 12, step: 2.5, rest: 90, weeklyGoal: 3, waterGoal: 8, sleepGoal: 8, goalWeight: 0, wellness: false, sheetUrl: '',
+      plan: { 2: { n: 'Chest + Triceps', m: ['chest', 'triceps'] }, 3: { n: 'Back + Biceps', m: ['lats', 'middle back', 'biceps'] }, 4: { n: 'Legs', m: ['quadriceps', 'hamstrings', 'glutes', 'calves'] }, 5: { n: 'Shoulders', m: ['shoulders'] }, 6: { n: 'Biceps + Triceps', m: ['biceps', 'triceps'] } },
       meals: { breakfast: '', lunch: '', dinner: '', snack: '' } }
   };
   let S;
@@ -143,18 +144,22 @@
   const bwchip = kg => `<span class="wchip">${fmtW(kg)}<small>kg</small></span>`;
   const wchip = (w, extra) => `<span class="wchip"><i style="background:${plate(w)}"></i>${fmtW(w)}<small>kg${extra ? ' ' + extra : ''}</small></span>`;
 
+  /* weekly plan: S.settings.plan = {weekday 0-6: {n: focus name, m: [muscles]}}; days without an entry are rest days */
+  const plan = () => S.settings.plan || {};
+  const planDays = () => Object.keys(plan()).length;
+  const goalW = () => planDays() || S.settings.weeklyGoal;
   function weekCount(k) { const ws = weekStart(k), we = addDays(ws, 7); return new Set(finished().filter(w => { const d = dkey(w.start); return d >= ws && d < we; }).map(w => dkey(w.start))).size; }
   function weekStreak() {
     let n = 0, k = weekStart(today());
-    if (weekCount(k) >= S.settings.weeklyGoal) n++;
+    if (weekCount(k) >= goalW()) n++;
     k = addDays(k, -7);
-    while (weekCount(k) >= S.settings.weeklyGoal) { n++; k = addDays(k, -7); }
+    while (weekCount(k) >= goalW()) { n++; k = addDays(k, -7); }
     return n;
   }
   function bestWeekStreak() {
     const fw = finished(); if (!fw.length) return 0;
     let k = weekStart(dkey(fw[0].start)), best = 0, cur = 0; const end = weekStart(today());
-    while (k <= end) { if (weekCount(k) >= S.settings.weeklyGoal) { cur++; best = Math.max(best, cur); } else if (k !== end) cur = 0; k = addDays(k, 7); }
+    while (k <= end) { if (weekCount(k) >= goalW()) { cur++; best = Math.max(best, cur); } else if (k !== end) cur = 0; k = addDays(k, 7); }
     return best;
   }
   const allPRs = () => finished().flatMap(w => (w.prs || []).map(p => Object.assign({ date: dkey(w.start), wid: w.id }, p)));
@@ -198,7 +203,7 @@
     { id: 'w25', name: 'Committed', desc: '25 workouts', icon: 'dumbbell', p: () => [finished().length, 25] },
     { id: 'w50', name: 'Gym rat', desc: '50 workouts', icon: 'dumbbell', p: () => [finished().length, 50] },
     { id: 'w100', name: 'Centurion', desc: '100 workouts', icon: 'trophy', p: () => [finished().length, 100] },
-    { id: 'goal', name: 'On target', desc: 'Hit your weekly goal', icon: 'target', p: () => [Math.min(weekCount(today()), S.settings.weeklyGoal), S.settings.weeklyGoal] },
+    { id: 'goal', name: 'On target', desc: 'Hit your weekly goal', icon: 'target', p: () => [Math.min(weekCount(today()), goalW()), goalW()] },
     { id: 'streak4', name: 'Month strong', desc: '4-week streak', icon: 'flame', p: () => [bestWeekStreak(), 4] },
     { id: 'streak12', name: 'Unstoppable', desc: '12-week streak', icon: 'flame', p: () => [bestWeekStreak(), 12] },
     { id: 'pr1', name: 'New best', desc: 'Set a personal record', icon: 'star', p: () => [allPRs().length, 1] },
@@ -384,7 +389,7 @@
       const tot = S.active.ex.reduce((a, e) => a + e.sets.length, 0), dn = S.active.ex.reduce((a, e) => a + e.sets.filter(s => s.done).length, 0);
       const left = S.active.ex.filter(e => e.sets.some(s => !s.done)).length;
       pc = { act: 'resume', t: 'Workout in progress!', s: `${left} exercise${left === 1 ? '' : 's'} left`, p: tot ? dn / tot * 100 : 0 };
-    } else pc = { act: 'start-menu', t: 'Workout progress!', s: wc >= st.weeklyGoal ? 'Weekly goal done. Nice work.' : `${st.weeklyGoal - wc} workout${st.weeklyGoal - wc === 1 ? '' : 's'} left this week`, p: wc / st.weeklyGoal * 100 };
+    } else pc = { act: 'start-menu', t: 'Workout progress!', s: wc >= goalW() ? 'Weekly goal done. Nice work.' : `${goalW() - wc} workout${goalW() - wc === 1 ? '' : 's'} left this week`, p: wc / goalW() * 100 };
     const next = S.active ? (S.active.ex.find(e => e.sets.some(s => !s.done)) || S.active.ex[0]) : null;
     const featId = next ? next.id : (S.routines[0] && S.routines[0].ex[0] ? S.routines[0].ex[0].id : (TEMPLATES[0].ex[0]));
     const nb = Object.keys(S.badges).length;
@@ -394,7 +399,7 @@
     return `
     <header class="top"><div class="hello"><span class="avatar">${esc((st.name || 'Me')[0].toUpperCase())}</span><div><div class="w">${greet}</div><div class="n">${esc(st.name || 'Athlete')}</div></div></div>
       <div class="top-icons"><button class="ic" data-go="progress" aria-label="Achievements">${I(IC.medal)}${nb ? `<span class="dot">${nb}</span>` : ''}</button><button class="ic" data-layer="settings" aria-label="Settings">${I(IC.gear)}</button></div></header>
-    <button class="card progress-card" data-act="${pc.act}"><span class="body"><h2>${pc.t}</h2><span class="small muted">${pc.s}</span></span>${ring(pc.p, `<span class="small">${cnt(pc.p)}%</span>`, 60, 6)}</button>
+    ${!S.active && planDays() ? planCard(k, wc) : `<button class="card progress-card" data-act="${pc.act}"><span class="body"><h2>${pc.t}</h2><span class="small muted">${pc.s}</span></span>${ring(pc.p, `<span class="small">${cnt(pc.p)}%</span>`, 60, 6)}</button>`}
     <div class="bento" style="grid-template-areas:'a b' 'a m' 's m';grid-template-rows:auto auto auto">
       ${wellOn() ? `<button class="tile card lime" style="grid-area:a" data-go="daily"><span class="tl">Today ${I(IC.flame)}</span>
         <span class="center">${ring(ds.n / ds.of * 100, `<span><span class="lg" style="font-size:34px">${cnt(ds.n)}/${ds.of}</span><br><span class="small">goals</span></span>`, 128, 12)}</span></button>`
@@ -405,15 +410,31 @@
         ${lb ? `<span><span class="xl">${cnt(lb.kg, 'w')}</span><span class="unit">kg</span></span><span class="small ${bd == null ? 'muted' : 'delta'}">${bd == null ? fmtDay(lb.d, { day: 'numeric', month: 'short' }) : deltaTxt(bd) + ' · 30 days'}</span>${spark(bl, 120, 26)}`
           : `<span class="xl" style="color:var(--faint)">–</span><span class="small muted">Tap to log your weight</span>`}</button>
       <button class="tile card media" style="grid-area:m;min-height:190px" data-open="${featId}">${gif(featId).replace('class="gif ', 'class="gif " style="position:absolute;inset:0;border-radius:0"')}<span class="pill">${S.active ? 'Up next' : 'Try this'}</span></button>
-      <button class="tile card" style="grid-area:s" data-go="progress"><span class="tl">Streak ${I(IC.flame, 'style="color:var(--lime)"')}</span><span class="split"><span><span class="xl">${cnt(streak)}</span><span class="unit">week${streak === 1 ? '' : 's'}</span></span>${ring(wc / st.weeklyGoal * 100, `<span class="small">${wc}/${st.weeklyGoal}</span>`, 50, 6)}</span></button>
+      <button class="tile card" style="grid-area:s" data-go="progress"><span class="tl">Streak ${I(IC.flame, 'style="color:var(--lime)"')}</span><span class="split"><span><span class="xl">${cnt(streak)}</span><span class="unit">week${streak === 1 ? '' : 's'}</span></span>${ring(wc / goalW() * 100, `<span class="small">${wc}/${goalW()}</span>`, 50, 6)}</span></button>
     </div>
-    <section class="sec"><div class="sec-head"><h2>Your routines</h2><button class="link" data-act="start-empty">${S.active ? 'Resume workout' : '+ Empty workout'}</button></div>
+    ${planDays() && !used5.length ? '' : `<section class="sec"><div class="sec-head"><h2>Your routines</h2><button class="link" data-act="start-empty">${S.active ? 'Resume workout' : '+ Empty workout'}</button></div>
       <div class="list">
         ${used5.length ? used5.map(r => routineRow(r)).join('') : TEMPLATES.slice(0, 3).map(t => `<button class="row inset" data-tpl="${esc(t.name)}">${gif(t.ex[0], 'thumb')}<span class="vr"></span><span class="body"><span class="t">${esc(t.name)}</span><span class="s">Template · ${t.ex.length} exercises · tap to add</span></span>${I(IC.plus, 'style="color:var(--lime)"')}</button>`).join('')}
         <button class="row" data-act="new-routine"><span class="eq-ic">${I(IC.plus)}</span><span class="body"><span class="t">Create your own routine</span><span class="s">Add your trainer's plan</span></span></button>
       </div>
-    </section>
+    </section>`}
     ${todayW.length ? `<section class="sec"><div class="sec-head"><h2>Today's training</h2><span class="muted small">${fmtKg(vol)} kg lifted</span></div><div class="list">${todayW.map(workoutRow).join('')}</div></section>` : ''}`;
+  }
+  function planCard(k, wc) {
+    const P = plan(), dow = parseD(k).getDay(), p = P[dow], done = workoutsOn(k), ws = weekStart(k);
+    const last = p ? finished().filter(w => w.plan === dow).pop() : null;
+    let nd = 1; while (nd < 7 && !P[(dow + nd) % 7]) nd++;
+    const np = P[(dow + nd) % 7], nk = addDays(k, nd);
+    const strip = [...Array(7)].map((_, i) => {
+      const dk = addDays(ws, i), wd = parseD(dk).getDay(), trained = workoutsOn(dk).length > 0, planned = !!P[wd];
+      return `<span class="wk-d${trained ? ' done' : ''}${dk === k ? ' now' : ''}${planned ? '' : ' off'}"><small>${parseD(dk).toLocaleDateString(LOC(), { weekday: 'narrow' })}</small><i>${trained ? I(IC.check) : ''}</i></span>`;
+    }).join('');
+    const head = done.length ? `<span class="pc-k">${I(IC.check)} Done today</span><h2>${esc(p ? p.n : done[0].name)}</h2><span class="small muted">${(n => `${n} set${n === 1 ? '' : 's'}`)(done.reduce((a, w) => a + doneSets(w).length, 0))} · ${fmtKg(done.reduce((a, w) => a + volume(w), 0))} kg</span>`
+      : p ? `<span class="pc-k">${esc(fmtDay(k, { weekday: 'long' }))}</span><h2>${esc(p.n)}</h2><span class="small muted">${last ? `${last.ex.length} exercises from last ${fmtDay(dkey(last.start), { weekday: 'long' })}` : 'First time: add exercises as you go'}</span>`
+      : `<span class="pc-k">Rest day</span><h2>Recover today</h2><span class="small muted">${np ? `Next: ${esc(fmtDay(nk, { weekday: 'long' }))} · ${esc(np.n)}` : ''}</span>`;
+    return `<div class="card plan-card"><div class="pc-top"><div class="body">${head}</div>${ring(wc / goalW() * 100, `<span class="small">${wc}/${goalW()}</span>`, 56, 6)}</div>
+      <div class="wk-strip">${strip}</div>
+      <div class="pc-acts">${!done.length && p ? `<button class="btn primary" data-act="start-plan">${I(IC.run)} Start ${esc(p.n)}</button>` : `<button class="btn" data-act="start-empty">${I(IC.plus)} ${done.length ? 'Another workout' : 'Train anyway'}</button>`}<button class="btn icon-only" data-layer="plan" aria-label="Edit weekly plan">${I(IC.calendar)}</button></div></div>`;
   }
   function routineRow(r) {
     const ws = weekStart(today()), times = finished().filter(w => w.routineId === r.id && dkey(w.start) >= ws).length;
@@ -558,20 +579,20 @@
   /* ---------- weight tab (takes Daily's place while wellness is off) */
   function vWeight() {
     const bl = bodyLog(), lb = bl[bl.length - 1], gw = +S.settings.goalWeight || 0, t = today();
-    const head = `<header class="top"><h1>Weight</h1><button class="btn primary sm" data-act="log-weight">${I(IC.plus)} Log</button></header>`;
+    const head = `<header class="top"><h1>Weight</h1><div class="top-icons"><button class="ic ic-lime" data-act="log-weight" aria-label="Log weight">${I(IC.plus)}</button><button class="ic" data-layer="settings" aria-label="Settings">${I(IC.gear)}</button></div></header>`;
     if (!lb) return head + `<div class="empty" style="padding:34px 20px">${I(IC.scale, 'style="width:44px;height:44px;color:var(--lime)"')}<h2>Track your body weight</h2>
       <p class="muted">Weigh yourself in the morning, after the toilet and before breakfast. Same time, same scale, so the trend is honest.</p><button class="btn primary block" data-act="log-weight">Log today’s weight</button></div>`;
     const first = bl[0], dv = n => bodyDelta(n), all = Math.round((lb.kg - first.kg) * 10) / 10;
     const goalP = gw && first.kg !== gw ? Math.max(0, Math.min(100, (first.kg - lb.kg) / (first.kg - gw) * 100)) : 0;
     const pts = bl.filter(x => !wRange || x.d >= addDays(t, -wRange)), kgs = bl.map(x => x.kg);
-    const stat = (v, l) => `<div class="stat"><b class="delta">${v == null ? '–' : deltaTxt(v)}</b><span>${l}</span></div>`;
+    const stat = (v, l, c = '') => `<div class="stat ${c}"><b class="delta">${v == null ? '–' : deltaTxt(v)}</b><span>${l}</span></div>`;
     return head + `
     <div class="card lime bw-hero"><div><span class="small">${lb.d === t ? 'Today' : fmtDay(lb.d, { weekday: 'short', day: 'numeric', month: 'short' })}</span>
         <div><span class="xl" style="font-size:52px">${cnt(lb.kg, 'w')}</span><span class="unit"> kg</span></div>
         <span class="small">${gw ? (lb.kg === gw ? 'Goal reached!' : `${fmtW(Math.abs(Math.round((lb.kg - gw) * 10) / 10))} kg ${lb.kg > gw ? 'to lose' : 'to gain'} · goal ${fmtW(gw)}`) : '<span data-layer="settings" style="text-decoration:underline">Set a goal weight</span>'}</span></div>
       ${gw ? ring(goalP, `<span><b class="lg" style="font-size:22px">${cnt(goalP)}%</b><br><span class="small">to goal</span></span>`, 104, 10) : ''}</div>
     <div class="stats3">${stat(dv(7), '7 days')}${stat(dv(30), '30 days')}${stat(bl.length > 1 ? all : null, 'Since ' + fmtDay(first.d, { day: 'numeric', month: 'short' }))}</div>
-    <section class="sec"><div class="sec-head"><h2>Trend</h2><div class="seg mini-seg">${[[30, '30D'], [90, '90D'], [0, 'All']].map(([v, l]) => `<button data-wr="${v}" aria-pressed="${wRange === v}">${l}</button>`).join('')}</div></div>
+    <section class="sec"><h2>Trend</h2><div class="seg">${[[30, '30 days'], [90, '90 days'], [0, 'All']].map(([v, l]) => `<button data-wr="${v}" aria-pressed="${wRange === v}">${l}</button>`).join('')}</div>
       <div class="card pad">${chart(pts.map(x => ({ k: x.d, v: x.kg })), gw)}
         ${bl.length > 1 ? `<div class="bw-mm"><span>Lowest <b>${fmtW(Math.min(...kgs))} kg</b></span><span>Highest <b>${fmtW(Math.max(...kgs))} kg</b></span><span>Entries <b>${bl.length}</b></span></div>` : ''}</div></section>
     <section class="sec"><h2>History</h2><div class="list">${bl.slice().reverse().map((x, i) => { const prev = bl[bl.length - 2 - i], d = prev ? Math.round((x.kg - prev.kg) * 10) / 10 : null;
@@ -702,7 +723,7 @@
   function startWorkout(opts = {}) {
     if (S.active) { openWorkout(); return; }
     const h = new Date().getHours();
-    S.active = { id: uid(), start: Date.now(), name: opts.name || tr(h < 11 ? 'Morning workout' : h < 16 ? 'Afternoon workout' : 'Evening workout'), routineId: opts.routineId || null,
+    S.active = { id: uid(), start: Date.now(), name: opts.name || tr(h < 11 ? 'Morning workout' : h < 16 ? 'Afternoon workout' : 'Evening workout'), routineId: opts.routineId || null, plan: opts.plan ?? null,
       ex: (opts.ex || []).map(x => ({ id: x.id, sets: newSetsFor(x.id, x.sets, x.reps) })) };
     save(); openWorkout();
   }
@@ -716,6 +737,7 @@
       <div class="wk-stats"><div class="card"><b class="num" data-clock>${fmtDur(Date.now() - a.start)}</b><span>Duration</span></div><div class="card"><b class="num" id="wk-vol">${fmtKg(vol)}</b><span>Volume kg</span></div><div class="card"><b class="num" id="wk-sets">${cnt(ds)}<small class="muted">/${tot}</small></b><span>Sets done</span></div></div>
       ${tot ? `<div class="thin wk-prog"><b style="width:${Math.round(ds / tot * 1000) / 10}%"></b></div>` : ''}
       ${a.ex.length ? a.ex.map((x, ei) => wexHTML(x, ei)).join('') : `<div class="empty"><p class="muted">Add the exercises you're doing. Pick the machine you're on if you don't know the name.</p></div>`}
+      ${a.plan != null && plan()[a.plan] ? `<div class="plan-add"><span class="flabel">Add for today’s focus</span><div class="chips">${plan()[a.plan].m.map(m => `<button class="chip on-lime" data-addm="${m}">${I(IC.plus)}${esc(ml(m))}</button>`).join('')}</div></div>` : ''}
       <button class="btn block" data-act="add-ex">${I(IC.plus)} Add exercises</button>
       <button class="btn danger block" data-act="discard">Discard workout</button>
       ${rest ? `<div class="rest${restFresh ? ' fresh' : ''}"><div><span class="fill" id="rest-fill" style="width:${(a.restEnd - Date.now()) / (a.restTotal * 1000) * 100}%"></span><span class="tm"><small>Rest</small><span id="rest-tm">${fmtDur(a.restEnd - Date.now())}</span></span><button class="btn sm" data-rest="-15">−15</button><button class="btn sm" data-rest="15">+15</button><button class="btn sm primary" data-rest="skip">Skip</button></div></div>` : ''}
@@ -797,6 +819,18 @@
   };
   const openRoutine = (r, isNew) => pushLayer({ type: 'routine', draft: clone(r), isNew });
 
+  /* ---------- weekly plan editor: one row per weekday, a name and the muscles; empty = rest day */
+  LAYER.plan = l => {
+    if (!l.draft) l.draft = [...Array(7)].map((_, i) => ({ n: (plan()[i] || {}).n || '', m: ((plan()[i] || {}).m || []).slice() }));
+    const order = [1, 2, 3, 4, 5, 6, 0], base = weekStart(today());
+    return `${lbar('Weekly plan')}
+      <p class="muted">Your trainer’s split. Each day, Home shows its focus, and Start fills in what you did last time on that day. Leave a day empty for rest.</p>
+      ${order.map((i, j) => { const x = l.draft[i]; return `<div class="card pad plan-day${x.m.length || x.n ? '' : ' off'}"><div class="pd-hd"><b>${esc(fmtDay(addDays(base, j), { weekday: 'long' }))}</b><input data-pn="${i}" value="${esc(x.n)}" placeholder="${x.m.length ? esc(x.m.map(ml).join(' + ')) : 'Rest day'}" aria-label="Focus name"></div>
+        <div class="chips">${MUSCLES.map(m => `<button class="chip" data-pm="${i}|${m}" aria-pressed="${x.m.includes(m)}">${esc(ml(m))}</button>`).join('')}</div></div>`; }).join('')}
+      <div class="foot"><div><button class="btn primary block" data-act="plan-save">Save plan</button></div></div>`;
+  };
+  LAYER_BIND.plan = (el, l) => el.querySelectorAll('[data-pn]').forEach(inp => inp.addEventListener('input', () => { l.draft[+inp.dataset.pn].n = inp.value; }));
+
   /* ---------- settings */
   LAYER.settings = () => {
     const st = S.settings;
@@ -808,10 +842,11 @@
         <label class="field">Reps<input type="number" inputmode="numeric" data-set="reps" value="${st.reps}"></label>
         <label class="field">Rest (sec)<input type="number" inputmode="numeric" data-set="rest" value="${st.rest}"></label></div></div>
       <div class="card pad stack"><h3>Goals</h3><div class="fields3" ${wellOn() ? '' : 'style="grid-template-columns:1fr 1fr"'}>
-        <label class="field">Workouts / week<input type="number" inputmode="numeric" data-set="weeklyGoal" value="${st.weeklyGoal}"></label>
+        ${planDays() ? '' : `<label class="field">Workouts / week<input type="number" inputmode="numeric" data-set="weeklyGoal" value="${st.weeklyGoal}"></label>`}
         ${wellOn() ? `<label class="field">Water (glasses)<input type="number" inputmode="numeric" data-set="waterGoal" value="${st.waterGoal}"></label>
         <label class="field">Sleep (hours)<input type="number" inputmode="decimal" data-set="sleepGoal" value="${st.sleepGoal}"></label>` : ''}
         <label class="field">Goal weight (kg)<input type="number" inputmode="decimal" step="0.1" data-set="goalWeight" value="${st.goalWeight || ''}" placeholder="none"></label></div></div>
+      <div class="card pad"><button class="switch-row" data-layer="plan"><span class="body"><span class="t">Weekly plan</span><span class="s">${planDays() ? `${planDays()} training days: ${Object.values(plan()).map(p => esc(p.n)).join(', ')}` : 'No plan yet. Add your trainer’s split.'}</span></span>${I(IC.back, 'style="transform:rotate(180deg);color:var(--faint)"')}</button></div>
       <div class="card pad"><button class="switch-row" data-act="toggle-well" role="switch" aria-checked="${wellOn()}"><span class="body"><span class="t">Water, sleep &amp; food</span><span class="s">${wellOn() ? 'On: the Daily tab tracks water, sleep and meals.' : 'Off for now. Turn on to bring back the Daily tab. Nothing you logged is lost.'}</span></span><span class="switch${wellOn() ? ' on' : ''}"><i></i></span></button></div>
       <div class="card pad stack"><h3>Google Sheet backup</h3><p class="muted small">Paste your Apps Script web-app URL and every finished workout is added to your sheet. Steps are in README.md.</p>
         <label class="field">Web app URL<input type="url" data-set="sheetUrl" placeholder="https://script.google.com/macros/s/…/exec" value="${esc(st.sheetUrl)}"></label></div>
@@ -895,6 +930,8 @@
     if (d.routine) { const r = S.routines.find(x => x.id === d.routine); return r && openRoutine(r, false); }
     if (d.tpl) { const t = TEMPLATES.find(x => x.name === d.tpl); const r = { id: uid(), name: t.name, ex: t.ex.map(id => ({ id, sets: S.settings.sets, reps: S.settings.reps })) }; return openRoutine(r, true); }
     if (d.wr) { wRange = +d.wr; return renderTab(); }
+    if (d.addm) { const was = L.m; L.q = ''; L.m = d.addm; L.limit = 40; return pushLayer({ type: 'picker', sel: [], target: 'workout', title: ml(d.addm), onClose: () => { L.m = was; } }); }
+    if (d.pm && top) { const [i, m] = d.pm.split('|'), x = top.draft[+i], j = x.m.indexOf(m); if (j >= 0) x.m.splice(j, 1); else x.m.push(m); return rerenderTop(); }
     if (d.lang) { S.settings.lang = d.lang; save(); renderNav(); renderTab(); layers.forEach(l => l.dirty = true); renderLayers(); return toast(d.lang === 'id' ? 'Bahasa diganti ke Indonesia' : 'Language set to English'); }
     if (d.day && !wellOn()) { const ws = workoutsOn(d.day); return ws.length ? pushLayer({ type: 'workoutView', wid: ws[ws.length - 1].id }) : toast('No workout on ' + fmtDay(d.day, { day: 'numeric', month: 'short' })); }
     if (d.day) { dailyKey = d.day; if (tab !== 'daily') { while (layers.length) layers.pop(); renderLayers(); return go('daily'); } return renderTab(); }
@@ -944,9 +981,18 @@
       case 'more': L.limit += 40; return top && top.type === 'picker' ? rerenderTop() : renderResults($('#view'));
       case 'clear-filters': L.q = ''; L.eq = ''; L.m = ''; return top && top.type === 'picker' ? rerenderTop() : renderTab();
       case 'add-ex': L.q = ''; return pushLayer({ type: 'picker', sel: [], target: 'workout' });
+      case 'start-plan': {
+        const dow = new Date().getDay(), p = plan()[dow]; if (!p) return startWorkout();
+        const last = finished().filter(w => w.plan === dow).pop();
+        return startWorkout({ name: p.n, plan: dow, ex: last ? last.ex.map(e => ({ id: e.id, sets: e.sets.length })) : [] });
+      }
+      case 'plan-save': {
+        const P = {}; top.draft.forEach((x, i) => { if (x.m.length || x.n.trim()) P[i] = { n: x.n.trim() || x.m.map(ml).join(' + '), m: x.m }; });
+        S.settings.plan = P; save(); popLayer(); return toast('Weekly plan saved');
+      }
       case 'routine-add': L.q = ''; return pushLayer({ type: 'picker', sel: [], target: 'routine' });
       case 'pick-done': {
-        const p = layers.pop(); const under = topLayer();
+        const p = layers.pop(); if (p.onClose) p.onClose(); const under = topLayer();
         if (p.target === 'workout' && S.active) { p.sel.forEach(id => S.active.ex.push({ id, sets: newSetsFor(id) })); save(); }
         if (p.target === 'routine' && under) p.sel.forEach(id => under.draft.ex.push({ id, sets: S.settings.sets, reps: S.settings.reps }));
         if (under) under.dirty = true; renderLayers(); return toast(`Added ${p.sel.length} exercise${p.sel.length === 1 ? '' : 's'}`);

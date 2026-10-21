@@ -495,3 +495,35 @@ tr:has(.chk.fx) td{animation:flash .8s ease-out}
 #ptr svg{width:22px;height:22px;stroke-width:2.4}
 #ptr.spin svg{animation:ptrSpin .7s linear infinite}
 @keyframes ptrSpin{to{transform:rotate(360deg)}}
+
+/* weekly plan */
+.plan-card{padding:16px;display:flex;flex-direction:column;gap:14px}
+.pc-top{display:flex;align-items:center;gap:14px}
+.pc-top .body{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.pc-top h2{font-size:22px}
+.pc-k{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--lime);text-transform:uppercase;letter-spacing:.08em}
+.pc-k svg{width:15px;height:15px;stroke-width:3}
+.wk-strip{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.wk-d{display:flex;flex-direction:column;align-items:center;gap:5px}
+.wk-d small{font-size:11px;font-weight:600;color:var(--muted)}
+.wk-d i{width:30px;height:30px;border-radius:50%;background:var(--surface-2);display:grid;place-items:center;color:var(--lime-ink)}
+.wk-d i svg{width:16px;height:16px;stroke-width:3}
+.wk-d.off i{background:none;box-shadow:inset 0 0 0 1.5px var(--surface-2)}
+.wk-d.done i{background:var(--lime)}
+.wk-d.now small{color:var(--lime)}
+.wk-d.now i{box-shadow:inset 0 0 0 2px var(--lime)}
+.pc-acts{display:flex;gap:10px}
+.pc-acts .btn:first-child{flex:1}
+.btn.icon-only{width:50px;padding:0;flex:none}
+.plan-add{display:flex;flex-direction:column;gap:2px}
+.chip.on-lime{color:var(--lime);display:inline-flex;align-items:center;gap:4px}
+.chip.on-lime svg{width:16px;height:16px}
+.plan-day{display:flex;flex-direction:column;gap:10px;transition:opacity .2s}
+.plan-day.off{opacity:.6}
+.pd-hd{display:flex;align-items:center;gap:10px}
+.pd-hd b{width:92px;flex:none}
+.pd-hd input{flex:1;min-width:0;border:0;border-radius:10px;background:var(--surface-2);padding:9px 12px;outline:none}
+.pd-hd input:focus{box-shadow:inset 0 0 0 2px var(--lime)}
+.plan-day .chips{flex-wrap:wrap;margin:0;padding:0;overflow:visible}
+.plan-day .chip{padding:6px 11px;font-size:13px}
+.ic-lime{background:var(--lime);color:var(--lime-ink)}
