@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
+# Gym visual GIFs are copyrighted: keep a local copy here for offline use, never commit it
+media/
+
+# local notes and editor config, not part of the published app
+CLAUDE.md
+.claude/
+# old photo set from an earlier version, not used by the app
+data/img/
