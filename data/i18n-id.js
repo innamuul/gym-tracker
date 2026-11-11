@@ -130,6 +130,11 @@ window.GYM_ID = {
     'Checking your Google Sheet…': 'Mengecek Google Sheet…', 'Could not reach your sheet. Update the Apps Script (README).': 'Sheet tidak bisa dihubungi. Perbarui Apps Script (README).',
     'No online backup yet': 'Belum ada cadangan online', 'Restore from Google?': 'Pulihkan dari Google?', 'Restore': 'Pulihkan', 'Backup restored': 'Cadangan dipulihkan',
     'That backup could not be read': 'Cadangan itu tidak bisa dibaca', 'Import backup?': 'Impor cadangan?', 'Import': 'Impor',
+    // live card, records, notes, swipe
+    'Workout in progress': 'Latihan berlangsung', 'Open workout': 'Buka latihan', 'Open': 'Buka', 'All sets done. Finish when you’re ready.': 'Semua set selesai. Akhiri kalau sudah siap.',
+    'Weekly goal reached!': 'Target mingguan tercapai!', 'Add your notes': 'Tambah catatanmu', 'Your name for it, seat and pin settings, trainer tips': 'Nama versimu, setelan kursi & pin, tips trainer',
+    'Set removed': 'Set dihapus', 'Remove set?': 'Hapus set?', 'This set is ticked. Remove it anyway?': 'Set ini sudah dicentang. Tetap hapus?',
+    'Keep at least one set. Use the bin to remove the exercise.': 'Sisakan minimal satu set. Pakai ikon tong sampah untuk menghapus gerakan.',
     'today': 'hari ini', 'yesterday': 'kemarin', 'none': 'tidak ada'
   },
   attr: {
@@ -144,6 +149,11 @@ window.GYM_ID = {
     'kg': 'kg'
   },
   rules: [
+    [/^Set (\d+) of (\d+)$/, 'Set $1 dari $2'],
+    [/^(\d+) of (\d+) sets$/, '$1 dari $2 set'],
+    [/^(\d+) of (\d+) workouts this week$/, '$1 dari $2 latihan minggu ini'],
+    [/^(\d+) weeks? streak$/, '$1 minggu beruntun'],
+    [/^New record! (.+)$/, (tr, m, x) => 'Rekor baru! ' + idUnit(x)],
     [/^Last backup: (.+)$/, (tr, m, x) => 'Cadangan terakhir: ' + tr(x)],
     [/^Backup from (.+) with (\d+) workouts\. It replaces what is on this phone now\.$/, 'Cadangan dari $1 berisi $2 latihan. Ini akan menggantikan data di HP ini.'],
     [/^It has (\d+) workouts and replaces what is on this phone now\.$/, 'Berisi $1 latihan dan akan menggantikan data di HP ini.'],
