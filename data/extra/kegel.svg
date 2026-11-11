@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 360">
+  <!-- Kegel / pelvic floor squeeze. Original drawing for Gym Tracker (front view of the pelvis).
+       The muscle sling at the bottom lifts and holds for 5 s, then relaxes for 5 s. -->
+  <rect width="360" height="360" fill="#fff"/>
+  <!-- pelvis -->
+  <path d="M180 92C150 80 120 60 88 70C60 80 52 120 66 150C80 180 104 196 112 222C116 240 128 262 150 270L172 272L188 272L210 270C232 262 244 240 248 222C256 196 280 180 294 150C308 120 300 80 272 70C240 60 210 80 180 92Z" fill="#ececec" stroke="#b9b9b9" stroke-width="3" stroke-linejoin="round"/>
+  <ellipse cx="180" cy="172" rx="62" ry="48" fill="#fff" stroke="#b9b9b9" stroke-width="3"/>
+  <ellipse cx="140" cy="240" rx="12" ry="16" fill="#fff" stroke="#c9c9c9" stroke-width="2.5"/>
+  <ellipse cx="220" cy="240" rx="12" ry="16" fill="#fff" stroke="#c9c9c9" stroke-width="2.5"/>
+  <path d="M180 92L180 128" stroke="#c9c9c9" stroke-width="3" stroke-linecap="round"/>
+  <!-- pelvic floor sling -->
+  <path fill="none" stroke-width="18" stroke-linecap="round" d="M114 228Q180 300 246 228">
+    <animate attributeName="d" dur="10s" repeatCount="indefinite" calcMode="spline" keyTimes="0;.08;.5;.58;1"
+      keySplines=".4 0 .2 1;0 0 1 1;.4 0 .2 1;0 0 1 1"
+      values="M114 228Q180 300 246 228;M114 228Q180 226 246 228;M114 228Q180 226 246 228;M114 228Q180 300 246 228;M114 228Q180 300 246 228"/>
+    <animate attributeName="stroke" dur="10s" repeatCount="indefinite" keyTimes="0;.08;.5;.58;1"
+      values="#f2b1a8;#e0473a;#e0473a;#f2b1a8;#f2b1a8"/>
+  </path>
+  <!-- lift arrows (only while squeezing) -->
+  <g fill="none" stroke="#8fba06" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" opacity="0">
+    <path d="M160 306V280M150 290l10-10 10 10"/>
+    <path d="M200 306V280M190 290l10-10 10 10"/>
+    <animate attributeName="opacity" dur="10s" repeatCount="indefinite" keyTimes="0;.04;.46;.5;1" values="0;1;1;0;0"/>
+    <animateTransform attributeName="transform" type="translate" dur="10s" repeatCount="indefinite" keyTimes="0;.08;1" values="0 8;0 -4;0 -4"/>
+  </g>
+  <!-- hold / relax timer -->
+  <rect x="60" y="324" width="240" height="10" rx="5" fill="#eeeeee"/>
+  <rect x="60" y="324" height="10" rx="5" fill="#8fba06" width="0">
+    <animate attributeName="width" dur="10s" repeatCount="indefinite" keyTimes="0;.5;.5001;1" values="0;240;0;0"/>
+  </rect>
+  <rect x="60" y="324" height="10" rx="5" fill="#c4c4c4" width="0">
+    <animate attributeName="width" dur="10s" repeatCount="indefinite" keyTimes="0;.5;1" values="0;0;240"/>
+  </rect>
+</svg>

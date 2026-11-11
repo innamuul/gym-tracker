@@ -175,6 +175,9 @@ p{margin:0}
 .gif .ph img+img{animation:flip 1.8s steps(1,end) infinite}
 @keyframes flip{0%{opacity:0}50%{opacity:1}}
 @media (prefers-reduced-motion:reduce){.gif .ph img+img{animation:none;opacity:0}}
+/* own media from data/extra.js (photos fill the tile, drawings sit on the white like the GIFs) */
+.gif.own .ph img{object-fit:cover;object-position:40% 50%}
+.gif.hero.own img{filter:none}
 .gif.miss::after{content:"";position:absolute;inset:32%;border-radius:50%;background:#e8e8e8}
 .thumb{width:62px;height:62px;flex:none;border-radius:12px}
 .thumbs{display:flex}
@@ -250,6 +253,16 @@ p{margin:0}
 .chk{width:42px;height:40px;border-radius:10px;background:var(--surface-2);display:grid;place-items:center;color:var(--faint)}
 .chk svg{width:20px;height:20px;stroke-width:3}
 tr.ok .chk{background:var(--lime);color:var(--lime-ink)}
+/* ▶ guided set (timed holds, kegel rep counter) */
+.chk.play{color:var(--lime);background:var(--lime-soft)}
+.chk.play svg{fill:currentColor;stroke-width:2}
+.sets tr.live td{background:var(--lime-soft)}
+.rest.go .tm{font-size:34px;line-height:1.1}
+.rest.go .tm small{color:var(--lime);font-size:12px}
+.rest.go .fill{transition:width .2s linear;background:rgb(209 240 30/.2)}
+.go-rep{position:relative;display:flex;align-items:baseline;gap:4px;font-variant-numeric:tabular-nums;margin-right:4px}
+.go-rep b{font-size:22px;font-weight:700}
+.go-rep small{color:var(--muted);font-size:12px}
 .wex-ft{display:flex;justify-content:space-between;align-items:center;padding-top:2px}
 .rest{position:fixed;left:0;right:0;bottom:calc(88px + env(safe-area-inset-bottom,0px));z-index:7;padding:0 max(16px,env(safe-area-inset-right,0px)) 0 max(16px,env(safe-area-inset-left,0px))}
 .rest>div{max-width:528px;margin:0 auto;background:var(--surface-2);border-radius:16px;box-shadow:0 10px 30px rgb(0 0 0/.6);padding:10px 12px;display:flex;align-items:center;gap:10px;position:relative;overflow:hidden}

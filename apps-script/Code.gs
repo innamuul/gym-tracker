@@ -4,6 +4,9 @@
  * Deploy > New deployment > Web app. Execute as: Me. Who has access: Anyone.
  * Copy the /exec URL into the app: Progress > Settings > Google Sheet backup.
  * Every finished workout adds one row per set. Deleting a workout in the app removes its rows.
+ * The app also saves a full copy of its data in the "Backup" tab, so Settings > Restore from Google can bring it back.
+ * Updating from an older version: paste this file, then Deploy > Manage deployments > edit (pencil) >
+ * Version: New version > Deploy. The /exec URL stays the same.
  */
 const SHEET_NAME = 'Sets';
 const HEADERS = ['workout_id', 'date', 'started', 'workout', 'set', 'exercise', 'nickname', 'equipment', 'kg', 'reps', 'volume_kg', 'exercise_id'];
@@ -11,6 +14,7 @@ const HEADERS = ['workout_id', 'date', 'started', 'workout', 'set', 'exercise', 
 function doPost(e) {
   const data = JSON.parse(e.postData.contents);
   if (data.action === 'weight') return saveWeight_(data.date, data.kg);
+  if (data.action === 'backup') return saveBackup_(data.json, data.at);
   const sh = sheet_();
   removeWorkout_(sh, data.workout.id);
   if (data.action !== 'delete' && data.rows.length) {
@@ -46,4 +50,28 @@ function removeWorkout_(sh, id) {
   if (n < 1) return;
   const ids = sh.getRange(2, 1, n, 1).getValues().flat();
   for (let i = ids.length - 1; i >= 0; i--) if (ids[i] === id) sh.deleteRow(i + 2);
+}
+
+/** Full app backup: B1 = time it was made, A2 down = the JSON in 40,000-character pieces (a cell holds 50,000). */
+function saveBackup_(json, at) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sh = ss.getSheetByName('Backup') || ss.insertSheet('Backup');
+  sh.clear();
+  const parts = [];
+  for (let i = 0; i < json.length; i += 40000) parts.push(["'" + json.slice(i, i + 40000)]); // leading ' = plain text, so a piece starting with = or + is never read as a formula
+  sh.getRange(1, 1, 1, 2).setValues([['saved_at', String(at)]]);
+  if (parts.length) { sh.getRange(2, 1, parts.length, 1).setNumberFormat('@'); sh.getRange(2, 1, parts.length, 1).setValues(parts); }
+  return ContentService.createTextOutput('ok');
+}
+
+/** GET ?action=info -> {at}; GET ?action=restore -> {at, data}. With &callback=fn it answers as JSONP for the app. */
+function doGet(e) {
+  const p = (e && e.parameter) || {};
+  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Backup');
+  const at = sh && sh.getLastRow() > 0 ? Number(sh.getRange(1, 2).getValue()) || 0 : 0;
+  let out = { ok: true, at: at };
+  if (p.action === 'restore' && at && sh.getLastRow() > 1) out.data = JSON.parse(sh.getRange(2, 1, sh.getLastRow() - 1, 1).getValues().map(r => r[0]).join(''));
+  const body = JSON.stringify(out), cb = /^[\w$.]{1,64}$/.test(p.callback || '') ? p.callback : '';
+  return cb ? ContentService.createTextOutput(cb + '(' + body + ');').setMimeType(ContentService.MimeType.JAVASCRIPT)
+    : ContentService.createTextOutput(body).setMimeType(ContentService.MimeType.JSON);
 }

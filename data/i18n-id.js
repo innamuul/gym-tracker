@@ -2,6 +2,8 @@
    text = exact English text (trimmed) -> Indonesian, attr = overrides for placeholder/aria-label/title only,
    rules = [regex, replacement] for text with numbers in it. Text joined with " · " is translated piece by piece.
    Exercise names, steps and muscle tags from the dataset stay English (that's how gyms say them anyway). */
+/* units inside a translated phrase: "12 reps" -> "12 rep", "1:30 min" -> "1:30 mnt" (kg and 45s stay) */
+const idUnit = x => x.replace(/ reps$/, ' rep').replace(/ min$/, ' mnt');
 window.GYM_ID = {
   text: {
     // nav + headers
@@ -107,6 +109,27 @@ window.GYM_ID = {
     'Remove exercise?': 'Hapus gerakan?', 'Remove': 'Hapus', 'Delete routine?': 'Hapus program?', 'Delete workout?': 'Hapus latihan?',
     'This removes it from your history and records.': 'Ini menghapusnya dari riwayat dan rekor.', 'OK': 'OK',
     '1–3 sets': '1–3 set', '. Photos: yuhonas/free-exercise-db (public domain).': '. Foto: yuhonas/free-exercise-db (domain publik).',
+    // timed + reps-only exercises (plank, kegel)
+    'Sec': 'Detik', 'sec': 'dtk', 'min': 'mnt', '+kg': '+kg', 'Longest hold': 'Tahan terlama', 'Most in a workout': 'Terbanyak per latihan', 'Most reps': 'Rep terbanyak',
+    'Longest hold per workout (sec)': 'Tahan terlama per latihan (detik)', 'Most reps per workout': 'Rep terbanyak per latihan',
+    'Photos: free-exercise-db (public domain)': 'Foto: free-exercise-db (domain publik)', 'Illustration made for Gym Tracker': 'Ilustrasi dibuat untuk Gym Tracker',
+    // kegel category + guided sets
+    'Kegel': 'Kegel', 'Pelvic floor': 'Dasar panggul', 'Get ready': 'Siap-siap', 'Hold': 'Tahan', 'Squeeze': 'Kencangkan', 'Relax': 'Lemaskan', 'Release': 'Lepas',
+    'Lift + squeeze': 'Angkat + kencangkan', 'Lower + relax': 'Turun + lemaskan', 'Raise + squeeze': 'Angkat + kencangkan', 'Thrust + squeeze': 'Dorong + kencangkan',
+    'Sit back + relax': 'Duduk + lemaskan', 'Breathe out + lift': 'Buang napas + angkat', 'Breathe in + relax': 'Tarik napas + lemaskan',
+    'Stop': 'Stop', 'of': 'dari', 'Time! Set done': 'Waktu habis! Set selesai', 'All reps done!': 'Semua rep selesai!',
+    // past-workout editor
+    'Edit': 'Ubah', 'Again': 'Ulangi', 'Edit workout': 'Ubah latihan', 'Past workout': 'Latihan lalu', '+ Past workout': '+ Latihan lalu', 'Started': 'Mulai', 'Minutes': 'Menit',
+    'Save workout': 'Simpan latihan', 'Only ticked sets are saved.': 'Hanya set yang dicentang yang disimpan.', 'Add what you did that day, then tick ✓ the sets.': 'Tambahkan yang kamu lakukan hari itu, lalu centang ✓ set-nya.',
+    'Tick ✓ at least one set': 'Centang ✓ minimal satu set', 'Workout added': 'Latihan ditambahkan', 'Workout updated': 'Latihan diperbarui',
+    // online backup
+    'Online backup (Google Sheet)': 'Cadangan online (Google Sheet)', 'Back up now': 'Cadangkan sekarang', 'Restore from Google': 'Pulihkan dari Google',
+    'Your workouts are saved to your own Google Sheet, plus a full copy of everything so you can restore it on a new phone. Setup steps are in README.md.': 'Latihanmu disimpan ke Google Sheet milikmu, plus salinan lengkap semua data supaya bisa dipulihkan di HP baru. Cara pasang ada di README.md.',
+    'Not backed up yet': 'Belum dicadangkan', 'Backing up…': 'Mencadangkan…', 'Backup failed. Check your internet.': 'Gagal mencadangkan. Cek internet.', 'Backed up ✓': 'Tercadangkan ✓',
+    'Sent. Update the Apps Script to confirm backups (README).': 'Terkirim. Perbarui Apps Script supaya cadangan bisa dicek (README).', 'Backup sent': 'Cadangan terkirim', 'Backup failed': 'Gagal mencadangkan',
+    'Checking your Google Sheet…': 'Mengecek Google Sheet…', 'Could not reach your sheet. Update the Apps Script (README).': 'Sheet tidak bisa dihubungi. Perbarui Apps Script (README).',
+    'No online backup yet': 'Belum ada cadangan online', 'Restore from Google?': 'Pulihkan dari Google?', 'Restore': 'Pulihkan', 'Backup restored': 'Cadangan dipulihkan',
+    'That backup could not be read': 'Cadangan itu tidak bisa dibaca', 'Import backup?': 'Impor cadangan?', 'Import': 'Impor',
     'today': 'hari ini', 'yesterday': 'kemarin', 'none': 'tidak ada'
   },
   attr: {
@@ -117,9 +140,13 @@ window.GYM_ID = {
     'Try “pull down”, “seated row”, “rope”…': 'Coba “pull down”, “seated row”, “rope”…', 'Search your names, notes, machines…': 'Cari nama, catatan, mesin…',
     'e.g. “Coach’s rope one”': 'mis. “Rope punya coach”', 'e.g. Seat 4 · pin 6 · elbows in · 2 sec down': 'mis. Kursi 4 · pin 6 · siku rapat · turun 2 detik',
     'Routine name, e.g. Day A – Push': 'Nama program, mis. Hari A – Push', 'What should you eat? e.g. oats, 3 eggs, banana': 'Mau makan apa? mis. oat, 3 telur, pisang',
+    'Start timer': 'Mulai timer', 'Start rep counter': 'Mulai hitung rep',
     'kg': 'kg'
   },
   rules: [
+    [/^Last backup: (.+)$/, (tr, m, x) => 'Cadangan terakhir: ' + tr(x)],
+    [/^Backup from (.+) with (\d+) workouts\. It replaces what is on this phone now\.$/, 'Cadangan dari $1 berisi $2 latihan. Ini akan menggantikan data di HP ini.'],
+    [/^It has (\d+) workouts and replaces what is on this phone now\.$/, 'Berisi $1 latihan dan akan menggantikan data di HP ini.'],
     [/^(\d+) workouts? left this week$/, '$1 latihan lagi minggu ini'],
     [/^(\d+) exercises? left$/, '$1 gerakan lagi'],
     [/^(\d+)% of last week$/, '$1% dari minggu lalu'],
@@ -127,7 +154,7 @@ window.GYM_ID = {
     [/^Next: (.+)$/, (tr, m, x) => 'Berikutnya: ' + x.split(' · ').map(p => tr(p)).join(' · ')],
     [/^(\d+) exercises from last (.+)$/, '$1 gerakan dari $2 lalu'],
     [/^(\d+) training days: (.+)$/, (tr, m, n, x) => n + ' hari latihan: ' + x.split(', ').map(p => tr(p)).join(', ')],
-    [/^Last: (.+) kg$/, 'Terakhir: $1 kg'],
+    [/^Last: (.+)$/, (tr, m, x) => 'Terakhir: ' + idUnit(x)],
     [/^Last time: (.+)$/, 'Terakhir: $1'],
     [/^(\d+) exercises?$/, '$1 gerakan'],
     [/^(\d+) moves$/, '$1 gerakan'],
@@ -136,7 +163,7 @@ window.GYM_ID = {
     [/^Template$/, 'Template'],
     [/^tap to add$/, 'ketuk untuk tambah'],
     [/^done (\d+)× this week$/, '$1× minggu ini'],
-    [/^best (.+) kg$/, 'terbaik $1 kg'],
+    [/^best (.+)$/, (tr, m, x) => 'terbaik ' + idUnit(x)],
     [/^(\d+) min$/, '$1 mnt'],
     [/^(\d+)h (\d+)m$/, '$1j $2m'],
     [/^(\d+) PR$/, '$1 PR'],
@@ -146,7 +173,7 @@ window.GYM_ID = {
     [/^(.+) sets this week$/, '$1 set minggu ini'],
     [/^(\d+) exercises work this muscle\. Here is the equipment you need\. Tap one to see the moves\.$/, '$1 gerakan melatih otot ini. Ini alat yang kamu butuhkan. Ketuk untuk melihat gerakannya.'],
     [/^e\.g\. (.+)$/, 'mis. $1'],
-    [/^Was (.+) kg$/, 'Sebelumnya $1 kg'],
+    [/^Was (.+)$/, (tr, m, x) => 'Sebelumnya ' + idUnit(x)],
     [/^(.+) kg saved$/, '$1 kg tersimpan'],
     [/^Badge unlocked: (.+)$/, (tr, m, b) => 'Lencana didapat: ' + tr(b)],
     [/^Badge unlocked$/, 'Lencana didapat'],
@@ -165,6 +192,10 @@ window.GYM_ID = {
     [/^(\d+) wk ago$/, '$1 mgg lalu'],
     [/^Set (\d+) done$/, 'Set $1 selesai'],
     [/^Set (\d+) reps$/, 'Rep set $1'],
+    [/^Set (\d+) seconds$/, 'Detik set $1'],
+    [/^(\d+) reps$/, '$1 rep'],
+    [/^(.+) kg (\d+s|\d+:\d+ min)$/, (tr, m, w, t) => w + ' kg ' + idUnit(t)],
+    [/^(\d+:\d+) min$/, '$1 mnt'],
     [/^Set (\d+) weight$/, 'Beban set $1'],
     [/^Mark (.+) eaten$/, 'Tandai sudah makan'],
     [/^Nothing matches “(.+)”\.$/, 'Tidak ada yang cocok dengan “$1”.'],
