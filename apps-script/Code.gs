@@ -9,6 +9,19 @@
  * Version: New version > Deploy. The /exec URL stays the same.
  */
 const SHEET_NAME = 'Sets';
+/* Leave empty when this script was opened from the sheet (Extensions > Apps Script).
+   For a separate script project, paste the sheet's ID here (the long part of its URL between /d/ and /edit). */
+const SHEET_ID = '';
+function book_() { return SpreadsheetApp.getActiveSpreadsheet() || SpreadsheetApp.openById(SHEET_ID); }
+
+/** Run once from the editor (pick setup, press Run): creates the tabs and logs which sheet this script writes to. */
+function setup() {
+  const ss = book_();
+  sheet_();
+  if (!ss.getSheetByName('Body weight')) ss.insertSheet('Body weight').appendRow(['date', 'kg']);
+  if (!ss.getSheetByName('Backup')) ss.insertSheet('Backup');
+  Logger.log('Gym Tracker will write to: ' + ss.getName() + ' (' + ss.getUrl() + ')');
+}
 const HEADERS = ['workout_id', 'date', 'started', 'workout', 'set', 'exercise', 'nickname', 'equipment', 'kg', 'reps', 'volume_kg', 'exercise_id'];
 
 function doPost(e) {
@@ -26,7 +39,7 @@ function doPost(e) {
 }
 
 function sheet_() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = book_();
   const sh = ss.getSheetByName(SHEET_NAME) || ss.insertSheet(SHEET_NAME);
   if (sh.getLastRow() === 0) { sh.appendRow(HEADERS); sh.setFrozenRows(1); }
   return sh;
@@ -34,7 +47,7 @@ function sheet_() {
 
 /** Body weight: one row per day in the "Body weight" tab; logging the same day again replaces it. */
 function saveWeight_(date, kg) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = book_();
   const sh = ss.getSheetByName('Body weight') || ss.insertSheet('Body weight');
   if (sh.getLastRow() === 0) { sh.appendRow(['date', 'kg']); sh.setFrozenRows(1); }
   const n = sh.getLastRow() - 1;
@@ -54,7 +67,7 @@ function removeWorkout_(sh, id) {
 
 /** Full app backup: B1 = time it was made, A2 down = the JSON in 40,000-character pieces (a cell holds 50,000). */
 function saveBackup_(json, at) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = book_();
   const sh = ss.getSheetByName('Backup') || ss.insertSheet('Backup');
   sh.clear();
   const parts = [];
@@ -67,7 +80,7 @@ function saveBackup_(json, at) {
 /** GET ?action=info -> {at}; GET ?action=restore -> {at, data}. With &callback=fn it answers as JSONP for the app. */
 function doGet(e) {
   const p = (e && e.parameter) || {};
-  const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName('Backup');
+  const sh = book_().getSheetByName('Backup');
   const at = sh && sh.getLastRow() > 0 ? Number(sh.getRange(1, 2).getValue()) || 0 : 0;
   let out = { ok: true, at: at };
   if (p.action === 'restore' && at && sh.getLastRow() > 1) out.data = JSON.parse(sh.getRange(2, 1, sh.getLastRow() - 1, 1).getValues().map(r => r[0]).join(''));

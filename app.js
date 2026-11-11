@@ -495,7 +495,7 @@
       const dk = addDays(ws, i), wd = parseD(dk).getDay(), trained = workoutsOn(dk).length > 0, planned = !!P[wd];
       return `<span class="wk-d${trained ? ' done' : ''}${dk === k ? ' now' : ''}${planned ? '' : ' off'}"><small>${parseD(dk).toLocaleDateString(LOC(), { weekday: 'narrow' })}</small><i>${trained ? I(IC.check) : ''}</i></span>`;
     }).join('');
-    const head = done.length ? `<span class="pc-k">${I(IC.check)} Done today</span><h2>${esc(p ? p.n : done[0].name)}</h2><span class="small muted">${(n => `${n} set${n === 1 ? '' : 's'}`)(done.reduce((a, w) => a + doneSets(w).length, 0))} · ${fmtKg(done.reduce((a, w) => a + volume(w), 0))} kg</span>`
+    const head = done.length ? `<span class="pc-k">${I(IC.check)} Done today</span><h2>${esc(p ? p.n : done[0].name)}</h2><span class="small muted">${done.length > 1 ? `${done.length} workouts · ` : ''}${(n => `${n} set${n === 1 ? '' : 's'}`)(done.reduce((a, w) => a + doneSets(w).length, 0))} · ${fmtKg(done.reduce((a, w) => a + volume(w), 0))} kg</span>`
       : p ? `<span class="pc-k">${esc(fmtDay(k, { weekday: 'long' }))}</span><h2>${esc(p.n)}</h2><span class="small muted">${last ? `${last.ex.length} exercises from last ${fmtDay(dkey(last.start), { weekday: 'long' })}` : 'First time: add exercises as you go'}</span>`
       : `<span class="pc-k">Rest day</span><h2>Recover today</h2><span class="small muted">${np ? `Next: ${esc(fmtDay(nk, { weekday: 'long' }))} · ${esc(np.n)}` : ''}</span>`;
     return `<div class="card plan-card"><div class="pc-top"><div class="body">${head}</div>${ring(wc / goalW() * 100, `<span class="small">${wc}/${goalW()}</span>`, 56, 6)}</div>
@@ -1008,6 +1008,14 @@
       <div class="foot"><div><button class="btn" data-act="edit-workout">${I(IC.edit)} Edit</button><button class="btn" data-act="repeat">${I(IC.run)} Again</button><button class="btn danger" data-act="del-workout">${I(IC.trash)} Delete</button></div></div>`;
   };
 
+  /* ---------- one day with several workouts (e.g. gym in the morning, kegels at home) */
+  LAYER.dayView = l => {
+    const ws = workoutsOn(l.d);
+    return `${lbar(esc(fmtDay(l.d, { weekday: 'long', day: 'numeric', month: 'short' })))}
+      <div class="wk-stats"><div class="card"><b>${ws.length}</b><span>Workouts</span></div><div class="card"><b>${fmtKg(ws.reduce((a, w) => a + volume(w), 0))}</b><span>Volume kg</span></div><div class="card"><b>${ws.reduce((a, w) => a + doneSets(w).length, 0)}</b><span>Sets</span></div></div>
+      ${ws.length ? `<div class="list">${ws.map(workoutRow).join('')}</div>` : `<div class="empty"><p class="muted">No workouts on this day.</p></div>`}`;
+  };
+
   /* ---------- routines */
   LAYER.routines = () => `${lbar('Routines')}
     <p class="muted">Save your trainer's plan once, then start it with one tap. Sets and weights fill in from last time.</p>
@@ -1152,7 +1160,7 @@
     if (d.addm) { const was = L.m; L.q = ''; L.m = d.addm; L.limit = 40; return pushLayer({ type: 'picker', sel: [], target: 'workout', title: ml(d.addm), onClose: () => { L.m = was; } }); }
     if (d.pm && top) { const [i, m] = d.pm.split('|'), x = top.draft[+i], j = x.m.indexOf(m); if (j >= 0) x.m.splice(j, 1); else x.m.push(m); return rerenderTop(); }
     if (d.lang) { S.settings.lang = d.lang; save(); renderNav(); renderTab(); layers.forEach(l => l.dirty = true); renderLayers(); return toast(d.lang === 'id' ? 'Bahasa diganti ke Indonesia' : 'Language set to English'); }
-    if (d.day && !wellOn()) { const ws = workoutsOn(d.day); return ws.length ? pushLayer({ type: 'workoutView', wid: ws[ws.length - 1].id }) : toast('No workout on ' + fmtDay(d.day, { day: 'numeric', month: 'short' })); }
+    if (d.day && !wellOn()) { const ws = workoutsOn(d.day); return ws.length > 1 ? pushLayer({ type: 'dayView', d: d.day }) : ws.length ? pushLayer({ type: 'workoutView', wid: ws[0].id }) : toast('No workout on ' + fmtDay(d.day, { day: 'numeric', month: 'short' })); }
     if (d.day) { dailyKey = d.day; if (tab !== 'daily') { while (layers.length) layers.pop(); renderLayers(); return go('daily'); } return renderTab(); }
     if (d.cal) { const [y, m] = calMonth.split('-').map(Number), nd = new Date(y, m - 1 + +d.cal, 1); calMonth = dkey(nd).slice(0, 7); return renderTab(); }
     if (d.mode) { L.mode = d.mode; return renderTab(true); }

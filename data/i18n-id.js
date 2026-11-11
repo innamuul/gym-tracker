@@ -135,6 +135,7 @@ window.GYM_ID = {
     'Weekly goal reached!': 'Target mingguan tercapai!', 'Add your notes': 'Tambah catatanmu', 'Your name for it, seat and pin settings, trainer tips': 'Nama versimu, setelan kursi & pin, tips trainer',
     'Set removed': 'Set dihapus', 'Remove set?': 'Hapus set?', 'This set is ticked. Remove it anyway?': 'Set ini sudah dicentang. Tetap hapus?',
     'Keep at least one set. Use the bin to remove the exercise.': 'Sisakan minimal satu set. Pakai ikon tong sampah untuk menghapus gerakan.',
+    'No workouts on this day.': 'Tidak ada latihan di hari ini.',
     'today': 'hari ini', 'yesterday': 'kemarin', 'none': 'tidak ada'
   },
   attr: {
@@ -149,6 +150,7 @@ window.GYM_ID = {
     'kg': 'kg'
   },
   rules: [
+    [/^(\d+) workouts$/, '$1 latihan'],
     [/^Set (\d+) of (\d+)$/, 'Set $1 dari $2'],
     [/^(\d+) of (\d+) sets$/, '$1 dari $2 set'],
     [/^(\d+) of (\d+) workouts this week$/, '$1 dari $2 latihan minggu ini'],
